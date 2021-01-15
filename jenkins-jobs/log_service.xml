@@ -1,0 +1,56 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>log-service</description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@4.5.1">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>https://git.domain.com/app/log_service</url>
+        <credentialsId>git-client</credentialsId>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>*/master</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions/>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <authToken>giteatoken</authToken>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>cd app_log
+sudo su
+
+./mvnw package
+
+#docker build -f src/main/docker/Dockerfile.jvm -t app_log .
+sudo su -c &quot;buildah  bud --layers --format docker -f src/main/docker/Dockerfile.jvm  -t app_log .&quot;
+#tag
+#docker tag apphttp registry.domain.com/app_log
+sudo su -c &quot;buildah tag app_log registry.domain.com/app_log&quot;
+#login
+sudo su -c &quot;buildah login -u cicd -p yb9738z registry.domain.com&quot;
+
+#push
+
+#docker push registry.domain.com/app_log
+sudo su -c &quot;buildah --format docker push registry.domain.com/app_log&quot;
+</command>
+      <configuredLocalRules/>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>

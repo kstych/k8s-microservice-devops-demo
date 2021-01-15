@@ -1,0 +1,57 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>http-service</description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@4.5.1">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>https://git.domain.com/app/http_service</url>
+        <credentialsId>git-client</credentialsId>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>*/master</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions/>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <authToken>giteatoken</authToken>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>
+cd app_http
+sudo su
+
+./mvnw package
+
+#docker build -f src/main/docker/Dockerfile.jvm -t apphttp .
+sudo su -c &quot;buildah  bud --layers --format docker --build-arg KEYCLOAK_URL=https://auth.domain.com/auth/realms/orp/ -f src/main/docker/Dockerfile.jvm  -t apphttp .&quot;
+#tag
+#docker tag apphttp registry.domain.com/apphttp
+sudo su -c &quot;buildah tag apphttp registry.domain.com/apphttp&quot;
+#login
+sudo su -c &quot;buildah login -u cicd -p yb9738z registry.domain.com&quot;
+
+#push
+
+#docker push registry.domain.com/apphttp
+sudo su -c &quot;buildah --format docker push registry.domain.com/apphttp&quot;
+</command>
+      <configuredLocalRules/>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>
