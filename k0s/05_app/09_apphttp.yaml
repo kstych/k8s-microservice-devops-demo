@@ -1,0 +1,43 @@
+# kubectl apply -f <(../03_istio_helm/istio-1.8.0/bin/istioctl kube-inject -f 09_apphttp.yaml) -n orp
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: http-service
+  namespace: orp
+  labels:
+    app: http-service
+spec:
+  selector:
+    app: http-app
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 8082
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-app
+  namespace: orp
+  version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: http-app
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: http-app
+        version: v1
+    spec:
+      containers:
+      - name: http-app
+        image: registry.domain.com/apphttp:latest
+        ports:
+        - containerPort: 8082
+      imagePullSecrets:
+      - name: orp-registry-secret

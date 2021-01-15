@@ -1,0 +1,39 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: monitoringstorage
+provisioner: nfspod
+parameters:
+  archiveOnDelete: “false”
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: monitoringservervolume
+  labels:
+    name: monitoringservervolume # name can be anything
+spec:
+  storageClassName: monitoringstorage # same storage class as pvc
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    server: 192.168.1.2 # ip addres of nfs server
+    path: "/mnt/k8s/nfsroot/monitoring"  # path to directory, make sure directory is available
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: monitoringalertvolume
+  labels:
+    name: monitoringalertvolume # name can be anything
+spec:
+  storageClassName: monitoringstorage # same storage class as pvc
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    server: 192.168.1.2 # ip addres of nfs server
+    path: "/mnt/k8s/nfsroot/monitoring"  # path to directory, make sure directory is available

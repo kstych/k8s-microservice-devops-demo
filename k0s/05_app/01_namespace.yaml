@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: orp
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: orp-registry-secret
+  namespace: orp
+data:
+  .dockerconfigjson: >-
+    eyJhdXRocyI6eyJyZWdpc3RyeS5rOHMua2FuemkuaW4iOnsidXNlcm5hbWUiOiJjaWNkIiwicGFzc3dvcmQiOiJ5Yjk3Mzh6IiwiYXV0aCI6IlkybGpaRHA1WWprM016aDYifX19
+type: kubernetes.io/dockerconfigjson
+#kubectl create secret docker-registry orp-registry-secret --docker-server=registry.domain.com --docker-username=cicd --docker-password=yb9738z -n orp

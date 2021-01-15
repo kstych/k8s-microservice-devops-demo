@@ -1,0 +1,11 @@
+## Fedora 33 Install
+dnf update
+disable firewalld.service, enable sshd.service
+disable password login for ssh
+sudo allow no password for fedora user
+hostnamectl set-hostname domain.com (optional)
+disable selinux (/etc/sysconfig/selinux)
+dnf install git screen
+reboot
+
+

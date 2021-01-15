@@ -1,0 +1,7 @@
+prometheusOperator:
+  namespaces: {"orp","cicd","istio-system","monitoring","kube-system","cert-manager","default","edumaxe","kube-public"}
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorNamespaceSelector: {"orp","cicd","istio-system","monitoring","kube-system","cert-manager","default","edumaxe","kube-public"}
+    podMonitorNamespaceSelector: {"orp","cicd","istio-system","monitoring","kube-system","cert-manager","default","edumaxe","kube-public"}

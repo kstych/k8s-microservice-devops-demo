@@ -1,0 +1,57 @@
+sudo su
+curl --output /usr/local/sbin/k0s -L https://github.com/k0sproject/k0s/releases/download/v0.9.1/k0s-v0.9.1-amd64
+curl --output /usr/local/sbin/kubectl -L "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x /usr/local/sbin/{kubectl,k0s}
+
+mkdir -p ${HOME}/.k0s
+k0s default-config | tee ${HOME}/.k0s/k0s.yaml
+# vi ${HOME}/.k0s/k0s.yaml # update public IP in sans
+
+screen -R k0s
+rm -rf /var/lib/k0s/run; k0s server -c ${HOME}/.k0s/k0s.yaml --enable-worker
+
+sudo cat /var/lib/k0s/pki/admin.conf | tee ~/.k0s/kubeconfig
+export KUBECONFIG="${HOME}/.k0s/kubeconfig"
+
+kubectl get node,pods -A
+
+# if network fdriver hs "lo" in its name it will be ignored
+# when calico-node is visible
+kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface=wlo.*
+
+# Now wait for all pods to become running status
+
+
+
+
+#### external loadbalancer if running multi-node cluster on bare-metal
+#### https://metallb.universe.tf/installation/
+
+
+##################################################################################################
+
+
+
+
+
+
+
+############ Debug
+kubelet failed to start :
+1. ext4 filesystem? try --data-dir (doesnot work on btrfs)
+
+## Token decode
+echo $token | base64 -d | gunzip
+
+### Calico debug
+ifconfig
+kubectl -n kube-system logs calico-node-4kpm2
+kubectl -n kube-system describe pod calico-node-4kpm2
+less /var/log/pods/kube-system_calico-node-plsng_5eef5253-9612-489c-bc8c-33c55cfe059d/calico-node/0.log
+
+kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface=wlo.*
+
+
+############### remove everything
+cd /var/lib ; rm -rf calico cni k0s kubelet
+cd ~ ; rm -rf .k0s .kube

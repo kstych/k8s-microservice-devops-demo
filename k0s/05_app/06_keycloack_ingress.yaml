@@ -1,0 +1,68 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: orp-gateway
+  namespace: orp
+spec:
+  selector:
+    istio: ingressgateway # use Istio default gateway implementation
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "auth.domain.com"
+    - "app.domain.com"
+    tls:
+      httpsRedirect: true # sends 301 redirect for http requests
+  - port:
+      number: 443
+      name: https-443
+      protocol: HTTPS
+    hosts:
+    - app.domain.com
+    - auth.domain.com
+    tls:
+      mode: SIMPLE
+      credentialName: orp-certs-tls # This should match the Certifcate secretName
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: keycloak
+  namespace: orp
+spec:
+  hosts:
+  - "auth.domain.com"
+  gateways:
+  - orp-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        port:
+          number: 8080
+        host: keycloak
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: app-http
+  namespace: orp
+spec:
+  hosts:
+  - "app.domain.com"
+  gateways:
+  - orp-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        port:
+          number: 80
+        host: http-service

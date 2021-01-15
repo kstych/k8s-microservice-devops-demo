@@ -1,0 +1,137 @@
+# kubectl apply -f <(../03_istio_helm/istio-1.8.0/bin/istioctl kube-inject -f 08_db_service.yaml) -n orp
+
+# Create Storage Class
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: orpstorage
+provisioner: nfspod
+parameters:
+  archiveOnDelete: “false”
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: orp-db-volumne
+  labels:
+    name: orp-db-volumne # name can be anything
+spec:
+  storageClassName: orpstorage # same storage class as pvc
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    server: 192.168.1.2 # ip addres of nfs server
+    path: "/mnt/k8s/nfsroot/orp" # path to directory, make sure directory is available
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: orp-db-volumne
+  namespace: orp
+spec:
+  storageClassName: orpstorage
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-appdb
+  namespace: orp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-appdb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgres-appdb
+    spec:
+      containers:
+      - name: postgres
+        env:
+        - name: POSTGRES_DB
+          value: appdb
+        - name: POSTGRES_PASSWORD
+          value: password
+        - name: POSTGRES_USER
+          value: user
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        image: postgres
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-data-vol
+          subPath: postgresappdb
+      restartPolicy: Always
+      volumes:
+      - name: postgres-data-vol
+        persistentVolumeClaim:
+          claimName: orp-db-volumne
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-appdb
+  namespace: orp
+spec:
+  selector:
+    app: postgres-appdb
+  ports:
+  - name: tcp-appdb-port
+    port: 5432
+    targetPort: 5432
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: db-service
+  namespace: orp
+  labels:
+    app: db-service
+spec:
+  selector:
+    app: db-app
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 8081
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-app
+  namespace: orp
+  version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: db-app
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: db-app
+        version: v1
+    spec:
+      containers:
+      - name: db-container
+        image: registry.domain.com/appdb:latest
+        ports:
+        - containerPort: 8081
+      imagePullSecrets:
+        - name: orp-registry-secret
+

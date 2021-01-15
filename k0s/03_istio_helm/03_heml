@@ -1,0 +1,31 @@
+### global monitoring prometheus and kiali install
+helm3 repo add stable https://charts.helm.sh/stable
+helm3 repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+helm3 repo update
+
+kubectl create namespace monitoring
+helm3 install prometheus-stack prometheus-community/kube-prometheus-stack -n monitoring
+## -f prom-values.yaml
+
+helm3 install --set cr.create=true --set cr.namespace=istio-system --namespace monitoring --repo https://kiali.org/helm-charts kiali-operator kiali-operator
+## edit kiali configmap and change prometheus/grafana/jaeger urls (restart kiali deployment)
+kubectl get secret -n istio-system $(kubectl get sa kiali-service-account -n istio-system -o jsonpath={.secrets[0].name}) -o jsonpath={.data.token} | base64 -d
+
+
+
+
+
+
+
+
+### istio monitoring prometheus (used by kiali only)
+kubectl apply -f ${ISTIO_HOME}/samples/addons/prometheus.yaml
+kubectl apply -f ${ISTIO_HOME}/samples/addons/jaeger.yaml
+
+
+
+kubectl get secret --namespace monitoring prometheus-stack-grafana -o yaml
+## get admin-password , admin-user
+## base64 decode (admin/prom-operator)
+

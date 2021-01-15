@@ -1,0 +1,35 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: http-service
+  namespace: orp
+spec:
+  host: http-service
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: db-service
+  namespace: orp
+spec:
+  host: db-service
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: log-service
+  namespace: orp
+spec:
+  host: log-service
+  subsets:
+  - name: v1
+    labels:
+      version: v1

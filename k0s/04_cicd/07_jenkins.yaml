@@ -1,0 +1,88 @@
+kind: Secret
+apiVersion: v1
+metadata:
+  name: cicdregistry-basic-auth
+  namespace: cicd
+data:
+  .dockerconfigjson: >-
+    eyJhdXRocyI6eyJyZWdpc3RyeS5rOHMua2FuemkuaW4iOnsidXNlcm5hbWUiOiJjaWNkIiwicGFzc3dvcmQiOiJ5Yjk3Mzh6IiwiYXV0aCI6IlkybGpaRHA1WWprM016aDYifX19
+type: kubernetes.io/dockerconfigjson
+#kubectl create secret docker-registry cicdregistry-basic-auth --docker-server=registry.domain.com --docker-username=cicd --docker-password=yb9738z -n cicd
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jenkinstorage
+  labels:
+    name: jenkinstorage # jenkins claim for volume
+spec:
+  storageClassName: cicdstorage # same storage class as pvc
+  capacity:
+    storage: 40Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    server: 192.168.1.2 # ip addres of nfs server
+    path: "/mnt/k8s/nfsroot"  # path to directory, make sure directory is available
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-data
+  namespace: cicd
+spec:
+  storageClassName: cicdstorage
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-service
+  namespace: cicd
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: jenkins
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+  namespace: cicd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+        app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      containers:
+      - name: jenkins
+        image: registry.domain.com/cicd/jenkinscicd # make sure image is available in registry
+        securityContext:
+          privileged: true # required to build images from /dev/fuse
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: jenkins-home
+          mountPath: /var/lib/jenkins
+          subPath: jenkins
+        #- name: jenkins-home #remote disk can be slow
+          #mountPath: /var/lib/containers
+          #subPath: jenkins-containers
+      imagePullSecrets:
+      - name: cicdregistry-basic-auth
+      volumes:
+      - name: jenkins-home
+        persistentVolumeClaim:
+          claimName: jenkins-data

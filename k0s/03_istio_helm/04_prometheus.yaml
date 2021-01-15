@@ -1,0 +1,98 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: monitoring-issuer
+  namespace: istio-system #retuired istio-system (same as Certificate)
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: monitoring-certs
+  namespace: istio-system #retuired istio-system (same as ingress-gateway service)
+spec:
+  dnsNames:
+  - prometheus.domain.com
+  - grafana.domain.com
+  secretName: monitoring-certs-tls
+  issuerRef:
+    kind: Issuer
+    name: monitoring-issuer
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: monitoring-gateway
+  namespace: monitoring
+spec:
+  selector:
+    istio: ingressgateway # use Istio default gateway implementation
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - prometheus.domain.com
+    - grafana.domain.com
+    tls:
+      httpsRedirect: true # sends 301 redirect for http requests
+  - port:
+      number: 443
+      name: https-monitoring443
+      protocol: HTTPS
+    hosts:
+    - prometheus.domain.com
+    - grafana.domain.com
+    tls:
+      mode: SIMPLE
+      credentialName: monitoring-certs-tls # This should match the Certifcate secretName
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  hosts:
+  - prometheus.domain.com
+  gateways:
+  - monitoring-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        port:
+          number: 9090
+        host: prometheus-operated
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  hosts:
+  - grafana.domain.com
+  gateways:
+  - monitoring-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /kiali
+    route:
+    - destination:
+        port:
+          number: 20001
+        host: kiali.istio-system.svc.cluster.local
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        port:
+          number: 80
+        host: prometheus-stack-grafana

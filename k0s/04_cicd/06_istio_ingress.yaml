@@ -1,0 +1,91 @@
+### wait for certificates order to be completed
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: cicd-gateway
+  namespace: cicd
+spec:
+  selector:
+    istio: ingressgateway # use Istio default gateway implementation
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - git.domain.com
+    - registry.domain.com
+    - jenkins.domain.com
+    tls:
+      httpsRedirect: true # sends 301 redirect for http requests
+  - port:
+      number: 443
+      name: https-443
+      protocol: HTTPS
+    hosts:
+    - git.domain.com
+    - registry.domain.com
+    - jenkins.domain.com
+    tls:
+      mode: SIMPLE
+      credentialName: cicd-certs-tls # This should match the Certifcate secretName
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: gitea
+  namespace: cicd
+spec:
+  hosts:
+  - git.domain.com
+  gateways:
+  - cicd-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        port:
+          number: 3000
+        host: gitea-service
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: jenkins
+  namespace: cicd
+spec:
+  hosts:
+  - jenkins.domain.com
+  gateways:
+  - cicd-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        port:
+          number: 8080
+        host: jenkins-service
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: registry
+  namespace: cicd
+spec:
+  hosts:
+  - registry.domain.com
+  gateways:
+  - cicd-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        port:
+          number: 5000
+        host: registry-service

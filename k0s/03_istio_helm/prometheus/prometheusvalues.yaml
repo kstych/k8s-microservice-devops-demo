@@ -1,0 +1,25 @@
+kubelet:
+  serviceMonitor:
+    https:
+      false
+prometheus:
+  additionalServiceMonitors:
+    - name: my-monitor
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance : monitor
+      namespaceSelector:
+        matchNames:
+          - istio-system
+          - orp
+          - cicd
+      endpoints:
+        - port: metrics
+          interval: 10s
+
+alertmanager:
+  persistentVolume:
+    storageClass: monitoringstorage
+server:
+  persistentVolume:
+    storageClass: monitoringstorage

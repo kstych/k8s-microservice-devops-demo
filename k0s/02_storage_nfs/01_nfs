@@ -1,0 +1,21 @@
+$ dnf -y install nfs-utils
+
+
+-------
+$ vi /etc/idmapd.conf
+# line 5: uncomment and change to your domain name
+Domain = app.domain.com
+
+
+Create Folder To Mount
+
+----
+vi /etc/exports
+# for example, set [/home/nfsshare] as NFS share
+/mnt/k8s/nfsroot 192.168.1.2/24(rw,no_root_squash)
+
+
+#
+exportfs -rav
+systemctl start nfs-server.service
+systemctl enable --now rpcbind nfs-server

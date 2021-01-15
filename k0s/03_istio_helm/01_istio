@@ -1,0 +1,21 @@
+## install istio using istioctl https://istio.io/latest/docs/setup/install/istioctl/
+## curl -L https://istio.io/downloadIstio | sh -
+
+##export KUBECONFIG="${HOME}/.k0s/kubeconfig" (kubeconfig)
+
+istioctl install
+### other options
+### --set components.egressGateways.name=istio-egressgateway --set components.egressGateways.enabled=true
+
+
+### istio ingress will not get externalIP if not running on cloud (aws etc) or if there is no external loadbalancer eg metallb
+## edit Service istio loadbalancer and add under "spec.externalIPs"
+## external ip should be in your ifconfig (it will be used to bind to ports 80/443 etc)
+
+  externalIPs:
+    - 192.168.1.2
+
+
+
+#### manual istio sidecar
+## kubectl apply -f <(./istioctl kube-inject -f ../samples/httpbin/httpbin.yaml) -n orp
