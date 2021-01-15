@@ -1,0 +1,43 @@
+# kubectl apply -f <(../03_istio_helm/istio-1.8.0/bin/istioctl kube-inject -f 08_db_service.yaml) -n orp
+kind: Service
+apiVersion: v1
+metadata:
+  name: db-service
+  namespace: orp
+  labels:
+    app: db-service
+
+spec:
+  selector:
+    app: db-app
+  ports:
+  - name: db-service
+    protocol: TCP
+    port: 80
+    targetPort: 8081
+    name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-app
+  namespace: orp
+  labels:
+    app: db-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: db-app
+  template:
+    metadata:
+      labels:
+        app: db-app
+  spec:
+    containers:
+    - name: db-container
+      image: registry.k8s.kstych.com/appdb:latest
+      ports:
+      - containerPort: 8081
+    imagePullSecrets:
+      - name: orp-registry-secret

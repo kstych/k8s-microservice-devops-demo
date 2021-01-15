@@ -1,0 +1,43 @@
+# kubectl apply -f <(../03_istio_helm/istio-1.8.0/bin/istioctl kube-inject -f 07_log_service.yaml) -n orp
+kind: Service
+apiVersion: v1
+metadata:
+  name: log-service
+  namespace: orp
+  labels:
+    app: log-service
+
+spec:
+  selector:
+    app: log-app
+  ports:
+  - name: log-service
+    protocol: TCP
+    port: 80
+    targetPort: 8085
+    name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-app
+  namespace: orp
+  labels:
+    app: log-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: log-app
+  template:
+    metadata:
+      labels:
+        app: log-app
+  spec:
+    containers:
+    - name: log-container
+      image: registry.k8s.kstych.com/app_log:latest
+      ports:
+      - containerPort: 8085
+    imagePullSecrets:
+    - name: orp-registry-secret
